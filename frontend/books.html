@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books - BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/book.js" defer></script>
+    <script src="js/cart.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <div class="section">
+            <h1>Books Collection</h1>
+            <p>Start by browsing books, narrowing the category, or sorting the list to find the best match.</p>
+
+            <div class="search-grid">
+                <div class="form-group">
+                    <label for="searchInput">Search</label>
+                    <input type="text" id="searchInput" placeholder="Search by title or author">
+                </div>
+                <div class="form-group">
+                    <label for="categoryFilter">Category</label>
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Non-Fiction">Non-Fiction</option>
+                        <option value="Science">Science</option>
+                        <option value="History">History</option>
+                        <option value="Self-Help">Self-Help</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sortSelect">Sort By</label>
+                    <select id="sortSelect">
+                        <option value="title">Recommended</option>
+                        <option value="priceAsc">Price: Low to High</option>
+                        <option value="priceDesc">Price: High to Low</option>
+                        <option value="rating">Rating</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <button onclick="applyBookFilters()">Apply Filters</button>
+                </div>
+            </div>
+            <div id="booksContainer" class="books-grid"></div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><div class="site-footer-inner">Use the detail page to read more, save for later, or add directly to cart.</div></footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", displayAllBooks);
+    </script>
+</body>
+</html>

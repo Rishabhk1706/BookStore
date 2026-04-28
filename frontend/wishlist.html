@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist - BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <h1>Wishlist</h1>
+            <p>Save books here for later and move them to cart when you are ready.</p>
+            <div id="wishlistContainer"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer"><div class="site-footer-inner">Wishlist helps users compare and remember books before purchasing.</div></footer>
+
+    <script>
+        async function displayWishlist() {
+            checkAuth();
+            const wishlist = await getWishlist();
+            const container = document.getElementById("wishlistContainer");
+            const items = wishlist.items || [];
+
+            if (!items.length) {
+                container.innerHTML = `<div class="empty-state"><h3>No saved books yet</h3><p>Add books to wishlist from the Books page.</p><a class="button" href="books.html">Browse Books</a></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="books-grid">
+                    ${items.map(item => `
+                        <article class="book-card">
+                            <img class="book-cover" src="${item.imageUrl || `https://picsum.photos/seed/${item.bookId}/320/420`}" alt="${item.title}">
+                            <div class="book-meta">
+                                <span class="badge">${item.category}</span>
+                                <span class="rating">Saved</span>
+                            </div>
+                            <h3>${item.title}</h3>
+                            <p class="muted">by ${item.author}</p>
+                            <div class="book-footer">
+                                <strong>${formatCurrency(item.price)}</strong>
+                                <div class="button-row">
+                                    <button class="button small" onclick="moveToCart('${item.bookId}')">Add to Cart</button>
+                                    <button class="button ghost small" onclick="removeWish('${item.bookId}')">Remove</button>
+                                </div>
+                            </div>
+                        </article>
+                    `).join("")}
+                </div>
+            `;
+        }
+
+        async function moveToCart(bookId) {
+            const result = await addToCart(bookId, 1);
+            if (result && result.items) {
+                await removeFromWishlist(bookId);
+                showToast("Moved to cart", "success");
+                displayWishlist();
+            }
+        }
+
+        async function removeWish(bookId) {
+            await removeFromWishlist(bookId);
+            showToast("Removed from wishlist", "info");
+            displayWishlist();
+        }
+
+        document.addEventListener("DOMContentLoaded", displayWishlist);
+    </script>
+</body>
+</html>

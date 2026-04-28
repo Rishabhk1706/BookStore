@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/order.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <div class="section">
+            <h1>Admin Dashboard</h1>
+            <p>Manage catalog, monitor low stock, review orders, and track key business stats in one place.</p>
+            <div id="statsContainer" class="stat-grid"></div>
+
+            <div class="admin-layout" style="margin-top: 1rem;">
+                <div class="surface-card">
+                    <h2>Add New Book</h2>
+                    <form onsubmit="handleAddBook(event)">
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="author">Author:</label>
+                            <input type="text" id="author" name="author" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price">Price (₹):</label>
+                            <input type="number" id="price" name="price" step="0.01" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="category">Category:</label>
+                            <select id="category" name="category" required>
+                                <option>Fiction</option>
+                                <option>Non-Fiction</option>
+                                <option>Science</option>
+                                <option>History</option>
+                                <option>Self-Help</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="stock">Stock:</label>
+                            <input type="number" id="stock" name="stock" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Description:</label>
+                            <textarea id="description" name="description" rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="imageUrl">Image URL:</label>
+                            <input type="url" id="imageUrl" name="imageUrl" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label for="rating">Rating:</label>
+                            <input type="number" id="rating" name="rating" step="0.1" min="1" max="5" value="4.5">
+                        </div>
+                        <div class="form-group">
+                            <label for="reviewCount">Review Count:</label>
+                            <input type="number" id="reviewCount" name="reviewCount" value="10">
+                        </div>
+
+                        <button type="submit">Add Book</button>
+                    </form>
+                </div>
+
+                <div class="surface-card">
+                    <h2>Operational Overview</h2>
+                    <div id="lowStockContainer"></div>
+                    <h3 style="margin-top:1rem;">All Orders</h3>
+                    <div id="allOrdersContainer"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><div class="site-footer-inner">Only ADMIN users can access this dashboard.</div></footer>
+
+    <script>
+        async function handleAddBook(event) {
+            event.preventDefault();
+            const book = {
+                title: document.getElementById("title").value,
+                author: document.getElementById("author").value,
+                price: parseFloat(document.getElementById("price").value),
+                category: document.getElementById("category").value,
+                stock: parseInt(document.getElementById("stock").value),
+                description: document.getElementById("description").value,
+                imageUrl: document.getElementById("imageUrl").value || `https://picsum.photos/seed/${Date.now()}/320/420`,
+                rating: parseFloat(document.getElementById("rating").value),
+                reviewCount: parseInt(document.getElementById("reviewCount").value)
+            };
+            const result = await addBook(book);
+            if (result.id) {
+                showToast("Book added successfully", "success");
+                event.target.reset();
+                loadAdminStats();
+                displayAllOrders();
+            } else {
+                showToast(result.message || "Failed to add book", "error");
+            }
+        }
+
+        async function loadAdminStats() {
+            const stats = await getAdminStats();
+            const statsContainer = document.getElementById("statsContainer");
+            const lowStockContainer = document.getElementById("lowStockContainer");
+            if (!stats) {
+                statsContainer.innerHTML = "<div class='hint-card'>Unable to load admin stats.</div>";
+                return;
+            }
+
+            statsContainer.innerHTML = `
+                <div class="stat-card"><strong>${stats.totalUsers}</strong><span class="muted">Total users</span></div>
+                <div class="stat-card"><strong>${stats.totalOrders}</strong><span class="muted">Total orders</span></div>
+                <div class="stat-card"><strong>${formatCurrency(stats.revenue)}</strong><span class="muted">Revenue</span></div>
+                <div class="stat-card"><strong>${stats.pendingOrders}</strong><span class="muted">Pending orders</span></div>
+            `;
+
+            lowStockContainer.innerHTML = `
+                <div class="hint-card">
+                    <h3>Low Stock Alerts</h3>
+                    ${(stats.lowStockBooks || []).length ? stats.lowStockBooks.map(book => `<p>${book.title} - only ${book.stock} left</p>`).join("") : "<p>No low stock books right now.</p>"}
+                </div>
+            `;
+        }
+
+        async function displayAllOrders() {
+            checkAuth();
+            const orders = await getAllOrders();
+            const container = document.getElementById("allOrdersContainer");
+            if (!orders || orders.length === 0) {
+                container.innerHTML = "<div class='empty-state'><p>No orders found</p></div>";
+                return;
+            }
+
+            container.innerHTML = orders.map(order => `
+                <div class="mini-card" style="margin-bottom: 1rem;">
+                    <div class="page-actions">
+                        <div>
+                            <strong>${order.id}</strong>
+                            <p class="muted">${order.userId}</p>
+                        </div>
+                        <strong>${formatCurrency(order.totalPrice)}</strong>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select onchange="updateStatus('${order.id}', this.value)">
+                            <option value="PENDING" ${order.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                            <option value="CONFIRMED" ${order.status === 'CONFIRMED' ? 'selected' : ''}>CONFIRMED</option>
+                            <option value="SHIPPED" ${order.status === 'SHIPPED' ? 'selected' : ''}>SHIPPED</option>
+                            <option value="DELIVERED" ${order.status === 'DELIVERED' ? 'selected' : ''}>DELIVERED</option>
+                            <option value="CANCELLED" ${order.status === 'CANCELLED' ? 'selected' : ''}>CANCELLED</option>
+                        </select>
+                    </div>
+                </div>
+            `).join("");
+        }
+
+        async function updateStatus(orderId, status) {
+            const result = await updateOrderStatus(orderId, status);
+            if (result.status) {
+                showToast("Order status updated", "success");
+                displayAllOrders();
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            checkAuth();
+            checkAdmin();
+            loadAdminStats();
+            displayAllOrders();
+        });
+    </script>
+</body>
+</html>

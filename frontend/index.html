@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div>
+                <span class="badge">Online Book Store Management System</span>
+                <h1>A modern bookstore dashboard that guides users from signup to delivery tracking.</h1>
+                <p>This homepage explains the system clearly for first-time users and gives quick access to books, wishlist, cart, orders, and profile actions.</p>
+                <div class="hero-actions">
+                    <a class="button" href="books.html">Explore Books</a>
+                    <a class="button ghost" href="signup.html">Create Account</a>
+                </div>
+                <div class="stat-grid" style="margin-top: 1.5rem;">
+                    <div class="stat-card"><strong>Guided Flow</strong><span class="muted">Signup, browse, wishlist, checkout, track</span></div>
+                    <div class="stat-card"><strong>Professional UI</strong><span class="muted">Toasts, loading states, cleaner layout</span></div>
+                    <div class="stat-card"><strong>Admin Controls</strong><span class="muted">Stats, low stock, order updates</span></div>
+                </div>
+            </div>
+            <div class="surface-card">
+                <h2>What users can do</h2>
+                <div class="card-grid">
+                    <div class="feature-card"><strong>Signup / Login</strong><p>Secure access with JWT-based session handling.</p></div>
+                    <div class="feature-card"><strong>Browse & Sort</strong><p>Search by title, filter by category, and sort by price or rating.</p></div>
+                    <div class="feature-card"><strong>Wishlist & Cart</strong><p>Save books for later or add them directly to your cart.</p></div>
+                    <div class="feature-card"><strong>Track Orders</strong><p>See status progression from pending to delivered.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>How To Use</h2>
+            <div class="card-grid">
+                <div class="hint-card"><strong>1. Signup/Login</strong><p>Create an account or login from the top-right side of the navbar. After login your name appears with a welcome message.</p></div>
+                <div class="hint-card"><strong>2. Browse Books</strong><p>Open the Books page and use search, category filters, sorting, and pagination to find books easily.</p></div>
+                <div class="hint-card"><strong>3. Add to Cart / Wishlist</strong><p>Open any book detail page and decide whether to purchase now or save it for later.</p></div>
+                <div class="hint-card"><strong>4. Place Orders</strong><p>From Cart, review subtotal, tax, and final total, then place your order and track it on the Orders page.</p></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="page-actions">
+                <div>
+                    <h2>Featured Books</h2>
+                    <p>Popular books shown with image, rating, and quick access to detailed pages.</p>
+                </div>
+                <a class="button ghost" href="books.html">View All Books</a>
+            </div>
+            <div id="featuredBooks" class="books-grid"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="site-footer-inner">
+            <div class="footer-mini">
+                <span>BookStore Pro</span>
+                <span>Built to feel like a real-world e-commerce app.</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        async function displayFeaturedBooks() {
+            setLoading("featuredBooks", "Loading featured books...");
+            const response = await getAllBooks({ size: 4, sortBy: "rating" });
+            const books = response.items || [];
+            const container = document.getElementById("featuredBooks");
+
+            container.innerHTML = books.map(book => `
+                <article class="book-card">
+                    <img class="book-cover" src="${book.imageUrl}" alt="${book.title}">
+                    <div class="book-meta">
+                        <span class="badge">${book.category}</span>
+                        <span class="rating">⭐ ${book.rating}</span>
+                    </div>
+                    <h3>${book.title}</h3>
+                    <p class="muted">by ${book.author}</p>
+                    <p class="book-description">${book.description}</p>
+                    <div class="book-footer">
+                        <strong>${formatCurrency(book.price)}</strong>
+                        <a class="button small" href="book-details.html?id=${book.id}">Open</a>
+                    </div>
+                </article>
+            `).join("");
+        }
+
+        document.addEventListener("DOMContentLoaded", displayFeaturedBooks);
+    </script>
+</body>
+</html>

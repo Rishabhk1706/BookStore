@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation - BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <section class="section">
+            <div id="confirmationContainer"></div>
+        </section>
+    </main>
+
+    <footer class="site-footer"><div class="site-footer-inner">A clear confirmation page improves trust after checkout.</div></footer>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const order = getOrderConfirmation();
+            const container = document.getElementById("confirmationContainer");
+            if (!order) {
+                container.innerHTML = `<div class="empty-state"><h3>No recent order found</h3><a class="button" href="orders.html">Go to Orders</a></div>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h1>Order placed successfully</h1>
+                    <p>Your order ID is <strong>${order.id}</strong>. You can track it anytime from the Orders page.</p>
+                    <div class="detail-grid">
+                        <div class="detail-card"><strong>Status</strong><span>${order.status}</span></div>
+                        <div class="detail-card"><strong>Total</strong><span>${formatCurrency(order.totalPrice)}</span></div>
+                        <div class="detail-card"><strong>Items</strong><span>${order.items.length}</span></div>
+                    </div>
+                    <div class="hero-actions">
+                        <a class="button" href="orders.html">Track Orders</a>
+                        <a class="button ghost" href="books.html">Continue Shopping</a>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
