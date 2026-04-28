@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orders - BookStore Pro</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/app.js" defer></script>
+    <script src="js/api.js" defer></script>
+    <script src="js/auth.js" defer></script>
+    <script src="js/order.js" defer></script>
+</head>
+<body>
+    <header class="site-header">
+        <nav class="main-nav" id="mainNav"></nav>
+    </header>
+
+    <main class="container">
+        <div class="section">
+            <h1>My Orders</h1>
+            <p>Use the filter to focus on a specific status and follow each order timeline clearly.</p>
+            <div class="filters-bar">
+                <select id="statusFilter" onchange="displayOrders()">
+                    <option value="">All Statuses</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CONFIRMED">CONFIRMED</option>
+                    <option value="SHIPPED">SHIPPED</option>
+                    <option value="DELIVERED">DELIVERED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+            </div>
+            <div id="ordersContainer"></div>
+        </div>
+    </main>
+
+    <footer class="site-footer"><div class="site-footer-inner">Order details include pricing, items, and timeline progress for better clarity.</div></footer>
+
+    <script>
+        async function displayOrders() {
+            checkAuth();
+            const orders = await getUserOrders();
+            const container = document.getElementById("ordersContainer");
+            const selectedStatus = document.getElementById("statusFilter").value;
+            const filteredOrders = (orders || []).filter(order => !selectedStatus || order.status === selectedStatus);
+
+            if (!filteredOrders.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No orders found</h3>
+                        <p>Place an order first or change the selected filter.</p>
+                        <a class="button" href="books.html">Start Shopping</a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = filteredOrders.map(order => `
+                <div class="order-card">
+                    <div class="page-actions">
+                        <div>
+                            <h3>Order #${order.id}</h3>
+                            <p class="muted">${new Date(order.orderDate).toLocaleString()}</p>
+                        </div>
+                        <span class="status-pill" style="background:${getStatusColor(order.status)}20;color:${getStatusColor(order.status)};">${order.status}</span>
+                    </div>
+                    ${renderStatusTimeline(order.status)}
+                    <div class="detail-grid">
+                        <div class="detail-card"><strong>Subtotal</strong><span>${formatCurrency(order.subtotal)}</span></div>
+                        <div class="detail-card"><strong>Tax</strong><span>${formatCurrency(order.tax)}</span></div>
+                        <div class="detail-card"><strong>Total</strong><span>${formatCurrency(order.totalPrice)}</span></div>
+                    </div>
+                    <div class="surface-card">
+                        ${order.items.map(item => `
+                            <div class="summary-row">
+                                <span>${item.title} x ${item.quantity}</span>
+                                <span>${formatCurrency(item.price)}</span>
+                            </div>
+                        `).join("")}
+                    </div>
+                    ${(order.status === "PENDING" || order.status === "CONFIRMED") ? `<div class="form-actions"><button class="button danger" onclick="handleCancelOrder('${order.id}')">Cancel Order</button></div>` : ""}
+                </div>
+            `).join("");
+        }
+
+        async function handleCancelOrder(orderId) {
+            const result = await cancelOrder(orderId);
+            if (result && result.id) {
+                showToast("Order cancelled successfully", "success");
+                displayOrders();
+            } else {
+                showToast(result.message || "Unable to cancel order", "error");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", displayOrders);
+    </script>
+</body>
+</html>
